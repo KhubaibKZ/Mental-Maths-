@@ -1,0 +1,662 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Math Practice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-white dark:bg-gray-900 text-gray-900 dark:text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8 max-w-2xl">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-primary mb-2">Mental Math Practice</h1>
+            <p class="text-gray-600 dark:text-gray-300">Practice addition and subtraction with instant feedback</p>
+        </div>
+
+        <!-- Settings Panel -->
+        <div id="settingsPanel" class="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">Practice Settings</h2>
+            <div class="grid md:grid-cols-3 gap-4 mb-6">
+                <div>
+                    <label class="block text-sm font-medium mb-2">Difficulty Level</label>
+                    <select id="difficultyLevel" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary">
+                        <option value="easy">Easy (1-2 digits, 2-4 steps)</option>
+                        <option value="intermediate" selected="">Intermediate (1-2 digits, 3-6 steps)</option>
+                        <option value="advanced">Advanced (1-2 digits, 4-8 steps)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Number of Questions</label>
+                    <select id="questionCount" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary">
+                        <option value="10" selected="">10 Questions</option>
+                        <option value="15">15 Questions</option>
+                        <option value="20">20 Questions</option>
+                        <option value="25">25 Questions</option>
+                        <option value="30">30 Questions</option>
+                        <option value="40">40 Questions</option>
+                        <option value="50">50 Questions</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-2">Time Limit (minutes)</label>
+                    <select id="timeLimit" class="w-full px-3 py-2 text-base border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary">
+                        <option value="2">2 minutes</option>
+                        <option value="3">3 minutes</option>
+                        <option value="5" selected="">5 minutes</option>
+                        <option value="10">10 minutes</option>
+                        <option value="15">15 minutes</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Difficulty Description -->
+            <div id="difficultyDescription" class="bg-blue-50 dark:bg-blue-900 border border-blue-200 dark:border-blue-700 rounded-lg p-4 mb-4">
+                <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">Intermediate Level</h3>
+                <div class="text-sm text-blue-700 dark:text-blue-300">
+                    • Single &amp; double digit numbers (1-99)<br>
+                    • Multi-step problems with 3-6 operations<br>
+                    • Mix of addition and subtraction<br>
+                    • Problems with carrying/borrowing
+                </div>
+            </div>
+            
+            <button id="startBtn" class="w-full bg-primary text-white py-3 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition duration-200">
+                Start Practice (10 Questions)
+            </button>
+        </div>
+
+        <!-- Game Panel -->
+        <div id="gamePanel" class="hidden">
+            <!-- Progress and Timer -->
+            <div class="flex justify-between items-center mb-6 bg-gray-50 dark:bg-gray-800 rounded-lg p-4">
+                <div class="text-lg font-semibold">
+                    Question <span id="currentQuestion">1</span> of 10
+                </div>
+                <div class="text-lg font-semibold">
+                    Time: <span id="timer" class="text-primary">3:00</span>
+                </div>
+                <div class="text-lg font-semibold">
+                    Score: <span id="currentScore">0</span>/10
+                </div>
+            </div>
+
+            <!-- Question Display -->
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 mb-6 text-center">
+                <div id="question" class="text-2xl md:text-3xl font-bold mb-6 text-primary min-h-[3rem] flex items-center justify-center">
+                    Loading question...
+                </div>
+                
+                <!-- Answer Input -->
+                <div class="max-w-xs mx-auto">
+                    <input type="number" id="answerInput" class="w-full px-4 py-3 text-xl text-center border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 focus:ring-2 focus:ring-primary focus:border-primary" placeholder="Your answer" disabled="">
+                </div>
+                
+                <!-- Submit Button -->
+                <button id="submitBtn" class="mt-4 bg-primary text-white py-3 px-8 rounded-lg font-semibold hover:bg-opacity-90 transition duration-200 disabled:opacity-50" disabled="">
+                    Submit Answer
+                </button>
+            </div>
+
+            <!-- Feedback -->
+            <div id="feedback" class="hidden rounded-lg p-4 mb-4 text-center">
+                <div id="feedbackText" class="text-lg font-semibold mb-2"></div>
+                <div id="feedbackDetail" class="text-sm"></div>
+                <button id="nextBtn" class="mt-3 bg-primary text-white py-2 px-6 rounded-lg font-semibold hover:bg-opacity-90 transition duration-200">
+                    Next Question
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Panel -->
+        <div id="resultsPanel" class="hidden">
+            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg p-8 text-center">
+                <h2 class="text-2xl font-bold mb-4">Practice Complete!</h2>
+                <div class="text-6xl font-bold text-primary mb-4" id="finalScore">0/10</div>
+                <div class="text-lg mb-2" id="finalPercentage">0%</div>
+                <div class="text-gray-600 dark:text-gray-300 mb-6" id="timeUsed">Time used: 0:00</div>
+                
+                <div id="scoreMessage" class="text-lg font-semibold mb-6"></div>
+                
+                <button id="restartBtn" class="bg-primary text-white py-3 px-8 rounded-lg font-semibold hover:bg-opacity-90 transition duration-200">
+                    Practice Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode support
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+
+        class MathPractice {
+            constructor() {
+                this.currentQuestion = 0;
+                this.score = 0;
+                this.questions = [];
+                this.answers = [];
+                this.timeLimit = 3;
+                this.timeRemaining = 0;
+                this.timer = null;
+                this.startTime = null;
+                this.difficulty = 'intermediate';
+                
+                this.initializeElements();
+                this.bindEvents();
+            }
+
+            initializeElements() {
+                this.settingsPanel = document.getElementById('settingsPanel');
+                this.gamePanel = document.getElementById('gamePanel');
+                this.resultsPanel = document.getElementById('resultsPanel');
+                this.startBtn = document.getElementById('startBtn');
+                this.submitBtn = document.getElementById('submitBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.restartBtn = document.getElementById('restartBtn');
+                this.timeLimitSelect = document.getElementById('timeLimit');
+                this.difficultySelect = document.getElementById('difficultyLevel');
+                this.questionCountSelect = document.getElementById('questionCount');
+                this.difficultyDescription = document.getElementById('difficultyDescription');
+                this.currentQuestionSpan = document.getElementById('currentQuestion');
+                this.timerSpan = document.getElementById('timer');
+                this.currentScoreSpan = document.getElementById('currentScore');
+                this.questionDiv = document.getElementById('question');
+                this.answerInput = document.getElementById('answerInput');
+                this.feedback = document.getElementById('feedback');
+                this.feedbackText = document.getElementById('feedbackText');
+                this.feedbackDetail = document.getElementById('feedbackDetail');
+            }
+
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.startPractice());
+                this.submitBtn.addEventListener('click', () => this.submitAnswer());
+                this.nextBtn.addEventListener('click', () => this.nextQuestion());
+                this.restartBtn.addEventListener('click', () => this.restart());
+                this.difficultySelect.addEventListener('change', () => this.updateDifficultyDescription());
+                this.questionCountSelect.addEventListener('change', () => this.updateStartButtonText());
+                
+                this.answerInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !this.submitBtn.disabled) {
+                        this.submitAnswer();
+                    }
+                });
+                
+                // Initialize UI
+                this.updateDifficultyDescription();
+                this.updateStartButtonText();
+            }
+
+            generateRandomNumber(min, max) {
+                return Math.floor(Math.random() * (max - min + 1)) + min;
+            }
+
+            updateDifficultyDescription() {
+                const difficulty = this.difficultySelect.value;
+                const descriptions = {
+                    easy: {
+                        title: 'Easy Level',
+                        content: `• Single digit and simple double digit numbers (1-50)<br>
+                                 • Multi-step problems with 2-4 operations<br>
+                                 • Mostly addition, some basic subtraction<br>
+                                 • No negative results`
+                    },
+                    intermediate: {
+                        title: 'Intermediate Level', 
+                        content: `• Single & double digit numbers (1-99)<br>
+                                 • Multi-step problems with 3-6 operations<br>
+                                 • Mix of addition and subtraction<br>
+                                 • Problems with carrying/borrowing`
+                    },
+                    advanced: {
+                        title: 'Advanced Level',
+                        content: `• Single & double digit numbers (1-99)<br>
+                                 • Complex multi-step problems with 4-8 operations<br>
+                                 • Strategic mix of addition and subtraction<br>
+                                 • Advanced mental math stamina and focus`
+                    }
+                };
+                
+                const desc = descriptions[difficulty];
+                this.difficultyDescription.innerHTML = `
+                    <h3 class="font-semibold text-blue-800 dark:text-blue-200 mb-2">${desc.title}</h3>
+                    <div class="text-sm text-blue-700 dark:text-blue-300">${desc.content}</div>
+                `;
+            }
+
+            updateStartButtonText() {
+                const questionCount = this.questionCountSelect.value;
+                this.startBtn.textContent = `Start Practice (${questionCount} Questions)`;
+            }
+
+            generateQuestion() {
+                const difficulty = this.difficultySelect.value;
+                
+                // Define question type distribution based on difficulty
+                const questionTypes = this.getQuestionTypesForDifficulty(difficulty);
+                const randomType = questionTypes[Math.floor(Math.random() * questionTypes.length)];
+                
+                switch(randomType) {
+                    case 'single_digit_addition':
+                        return this.generateSingleDigitAddition();
+                    case 'single_digit_subtraction':
+                        return this.generateSingleDigitSubtraction();
+                    case 'double_digit_addition':
+                        return this.generateDoubleDigitAddition(difficulty);
+                    case 'double_digit_subtraction':
+                        return this.generateDoubleDigitSubtraction(difficulty);
+                    case 'triple_digit_addition':
+                        return this.generateTripleDigitAddition();
+                    case 'triple_digit_subtraction':
+                        return this.generateTripleDigitSubtraction();
+                    case 'multi_step':
+                        return this.generateMultiStepByDifficulty(difficulty);
+                }
+            }
+
+            getQuestionTypesForDifficulty(difficulty) {
+                switch(difficulty) {
+                    case 'easy':
+                        return [
+                            'single_digit_addition', 'single_digit_addition',
+                            'single_digit_subtraction',
+                            'double_digit_addition', 
+                            'multi_step', 'multi_step', 'multi_step'
+                        ];
+                    case 'intermediate':
+                        return [
+                            'single_digit_addition',
+                            'single_digit_subtraction',
+                            'double_digit_addition', 'double_digit_addition',
+                            'double_digit_subtraction', 'double_digit_subtraction',
+                            'multi_step', 'multi_step', 'multi_step', 'multi_step'
+                        ];
+                    case 'advanced':
+                        return [
+                            'single_digit_addition',
+                            'single_digit_subtraction', 
+                            'double_digit_addition',
+                            'double_digit_subtraction',
+                            'multi_step', 'multi_step', 'multi_step', 'multi_step', 'multi_step', 'multi_step'
+                        ];
+                }
+            }
+
+            generateSingleDigitAddition() {
+                const a = this.generateRandomNumber(1, 9);
+                const b = this.generateRandomNumber(1, 9);
+                return {
+                    expression: `${a} + ${b}`,
+                    answer: a + b
+                };
+            }
+
+            generateSingleDigitSubtraction() {
+                const a = this.generateRandomNumber(5, 18);
+                const b = this.generateRandomNumber(1, a - 1);
+                return {
+                    expression: `${a} - ${b}`,
+                    answer: a - b
+                };
+            }
+
+            generateDoubleDigitAddition(difficulty) {
+                let minRange, maxRange;
+                switch(difficulty) {
+                    case 'easy':
+                        minRange = 10; maxRange = 50;
+                        break;
+                    case 'intermediate':
+                        minRange = 10; maxRange = 60;
+                        break;
+                    case 'advanced':
+                        minRange = 20; maxRange = 70;
+                        break;
+                }
+                
+                let a, b, sum;
+                do {
+                    a = this.generateRandomNumber(minRange, maxRange);
+                    b = this.generateRandomNumber(minRange, Math.min(maxRange, 99 - a));
+                    sum = a + b;
+                } while (sum > 99);
+                
+                return {
+                    expression: `${a} + ${b}`,
+                    answer: sum
+                };
+            }
+
+            generateDoubleDigitSubtraction(difficulty) {
+                let minRange, maxRange;
+                switch(difficulty) {
+                    case 'easy':
+                        minRange = 20; maxRange = 50;
+                        break;
+                    case 'intermediate':
+                        minRange = 25; maxRange = 99;
+                        break;
+                    case 'advanced':
+                        minRange = 50; maxRange = 99;
+                        break;
+                }
+                
+                const a = this.generateRandomNumber(minRange, maxRange);
+                const b = this.generateRandomNumber(10, a - 1);
+                return {
+                    expression: `${a} - ${b}`,
+                    answer: a - b
+                };
+            }
+
+            generateTripleDigitAddition() {
+                // For advanced level, use triple digit numbers but ensure answer ≤ 99
+                // This creates challenging mental math with large numbers that simplify
+                let a, b, sum;
+                do {
+                    a = this.generateRandomNumber(100, 500);
+                    b = this.generateRandomNumber(100, 500);
+                    sum = a + b;
+                } while (sum > 599); // Limit to avoid too large intermediate results
+                
+                // Now subtract a large number to bring result under 99
+                const subtractAmount = sum - this.generateRandomNumber(10, 99);
+                
+                return {
+                    expression: `${a} + ${b} - ${subtractAmount}`,
+                    answer: sum - subtractAmount
+                };
+            }
+
+            generateTripleDigitSubtraction() {
+                // Use triple digit numbers but ensure final answer ≤ 99
+                const a = this.generateRandomNumber(200, 500);
+                const subtractAmount = a - this.generateRandomNumber(10, 99);
+                
+                return {
+                    expression: `${a} - ${subtractAmount}`,
+                    answer: a - subtractAmount
+                };
+            }
+
+            generateMultiStepByDifficulty(difficulty) {
+                let stepRange, numberRange, additionProbability;
+                
+                switch(difficulty) {
+                    case 'easy':
+                        stepRange = [2, 4];
+                        numberRange = [1, 25];
+                        additionProbability = 0.7; // More addition for easy
+                        break;
+                    case 'intermediate':
+                        stepRange = [3, 6];
+                        numberRange = [1, 40];
+                        additionProbability = 0.6;
+                        break;
+                    case 'advanced':
+                        stepRange = [4, 8];
+                        numberRange = [1, 50];
+                        additionProbability = 0.5; // Equal mix for advanced
+                        break;
+                }
+                
+                let question;
+                let attempts = 0;
+                const maxAttempts = 50;
+                
+                // Keep trying until we get a valid question with answer ≤ 99
+                do {
+                    const stepCount = this.generateRandomNumber(stepRange[0], stepRange[1]);
+                    
+                    const numbers = [];
+                    const operations = [];
+                    
+                    // Start with a smaller first number to allow room for operations
+                    numbers.push(this.generateRandomNumber(numberRange[0], Math.min(numberRange[1], 50)));
+                    
+                    let expression = numbers[0].toString();
+                    let answer = numbers[0];
+                    
+                    for (let i = 1; i < stepCount; i++) {
+                        const operation = Math.random() < additionProbability ? '+' : '-';
+                        operations.push(operation);
+                        
+                        let nextNumber;
+                        if (operation === '+') {
+                            // Limit addition to prevent exceeding 99
+                            const maxAdd = Math.min(numberRange[1], 99 - answer);
+                            if (maxAdd < numberRange[0]) {
+                                // Force subtraction if addition would exceed 99
+                                nextNumber = this.generateRandomNumber(numberRange[0], Math.min(answer - 1, numberRange[1]));
+                                operations[operations.length - 1] = '-';
+                                answer -= nextNumber;
+                            } else {
+                                nextNumber = this.generateRandomNumber(numberRange[0], maxAdd);
+                                answer += nextNumber;
+                            }
+                        } else {
+                            // Ensure we don't go negative
+                            const maxSubtract = Math.min(answer - (difficulty === 'easy' ? 5 : 1), numberRange[1]);
+                            if (maxSubtract < numberRange[0]) {
+                                // Force addition if subtraction would make result too small
+                                const maxAdd = Math.min(numberRange[1], 99 - answer);
+                                if (maxAdd >= numberRange[0]) {
+                                    nextNumber = this.generateRandomNumber(numberRange[0], maxAdd);
+                                    operations[operations.length - 1] = '+';
+                                    answer += nextNumber;
+                                } else {
+                                    // Skip this operation if neither works
+                                    operations.pop();
+                                    continue;
+                                }
+                            } else {
+                                nextNumber = this.generateRandomNumber(numberRange[0], maxSubtract);
+                                answer -= nextNumber;
+                            }
+                        }
+                        
+                        numbers.push(nextNumber);
+                        expression += ` ${operations[operations.length - 1]} ${nextNumber}`;
+                    }
+                    
+                    question = {
+                        expression: expression,
+                        answer: answer,
+                        steps: stepCount
+                    };
+                    
+                    attempts++;
+                } while ((question.answer > 99 || question.answer < 1) && attempts < maxAttempts);
+                
+                // Fallback: if we couldn't generate a valid question, create a simple one
+                if (question.answer > 99 || question.answer < 1) {
+                    const a = this.generateRandomNumber(10, 30);
+                    const b = this.generateRandomNumber(10, 30);
+                    const c = this.generateRandomNumber(5, 15);
+                    question = {
+                        expression: `${a} + ${b} - ${c}`,
+                        answer: a + b - c,
+                        steps: 3
+                    };
+                }
+                
+                return question;
+            }
+
+            startPractice() {
+                this.timeLimit = parseInt(this.timeLimitSelect.value);
+                this.questionCount = parseInt(this.questionCountSelect.value);
+                this.timeRemaining = this.timeLimit * 60;
+                this.currentQuestion = 0;
+                this.score = 0;
+                this.questions = [];
+                this.answers = [];
+                this.startTime = Date.now();
+                
+                // Generate all questions
+                for (let i = 0; i < this.questionCount; i++) {
+                    this.questions.push(this.generateQuestion());
+                }
+                
+
+                
+                this.settingsPanel.classList.add('hidden');
+                this.gamePanel.classList.remove('hidden');
+                this.resultsPanel.classList.add('hidden');
+                
+                this.startTimer();
+                this.showQuestion();
+            }
+
+            startTimer() {
+                this.updateTimerDisplay();
+                this.timer = setInterval(() => {
+                    this.timeRemaining--;
+                    this.updateTimerDisplay();
+                    
+                    if (this.timeRemaining <= 0) {
+                        this.endPractice();
+                    }
+                }, 1000);
+            }
+
+            updateTimerDisplay() {
+                const minutes = Math.floor(this.timeRemaining / 60);
+                const seconds = this.timeRemaining % 60;
+                this.timerSpan.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                
+                // Change color when time is running low
+                if (this.timeRemaining <= 30) {
+                    this.timerSpan.classList.add('text-red-500');
+                } else {
+                    this.timerSpan.classList.remove('text-red-500');
+                }
+            }
+
+            showQuestion() {
+                if (this.currentQuestion >= this.questionCount) {
+                    this.endPractice();
+                    return;
+                }
+                
+                const question = this.questions[this.currentQuestion];
+                // Update progress display
+                const progressDiv = document.querySelector('#gamePanel .flex .text-lg');
+                progressDiv.innerHTML = `Question <span id="currentQuestion">${this.currentQuestion + 1}</span> of ${this.questionCount}`;
+                
+                const scoreDiv = document.querySelector('#gamePanel .flex .text-lg:last-child');
+                scoreDiv.innerHTML = `Score: <span id="currentScore">${this.score}</span>/${this.questionCount}`;
+                
+                this.questionDiv.textContent = `${question.expression} = ?`;
+                this.answerInput.value = '';
+                this.answerInput.disabled = false;
+                this.answerInput.focus();
+                this.submitBtn.disabled = false;
+                this.feedback.classList.add('hidden');
+            }
+
+            submitAnswer() {
+                const userAnswer = parseInt(this.answerInput.value);
+                const correctAnswer = this.questions[this.currentQuestion].answer;
+                const isCorrect = userAnswer === correctAnswer;
+                
+                this.answers.push({
+                    question: this.questions[this.currentQuestion],
+                    userAnswer: userAnswer,
+                    correct: isCorrect
+                });
+                
+                if (isCorrect) {
+                    this.score++;
+                    this.currentScoreSpan.textContent = this.score;
+                }
+                
+                this.showFeedback(isCorrect, correctAnswer, userAnswer);
+                this.answerInput.disabled = true;
+                this.submitBtn.disabled = true;
+            }
+
+            showFeedback(isCorrect, correctAnswer, userAnswer) {
+                this.feedback.classList.remove('hidden');
+                
+                if (isCorrect) {
+                    this.feedback.className = 'bg-green-100 dark:bg-green-900 border border-green-300 dark:border-green-600 rounded-lg p-4 mb-4 text-center';
+                    this.feedbackText.textContent = 'Correct! 🎉';
+                    this.feedbackText.className = 'text-lg font-semibold mb-2 text-green-800 dark:text-green-200';
+                    this.feedbackDetail.textContent = `Great job!`;
+                } else {
+                    this.feedback.className = 'bg-red-100 dark:bg-red-900 border border-red-300 dark:border-red-600 rounded-lg p-4 mb-4 text-center';
+                    this.feedbackText.textContent = 'Incorrect ❌';
+                    this.feedbackText.className = 'text-lg font-semibold mb-2 text-red-800 dark:text-red-200';
+                    this.feedbackDetail.textContent = `Correct answer: ${correctAnswer}${userAnswer ? ` (You answered: ${userAnswer})` : ''}`;
+                }
+            }
+
+            nextQuestion() {
+                this.currentQuestion++;
+                this.showQuestion();
+            }
+
+            endPractice() {
+                clearInterval(this.timer);
+                
+                const endTime = Date.now();
+                const timeUsed = Math.floor((endTime - this.startTime) / 1000);
+                const timeUsedMinutes = Math.floor(timeUsed / 60);
+                const timeUsedSeconds = timeUsed % 60;
+                
+                this.gamePanel.classList.add('hidden');
+                this.resultsPanel.classList.remove('hidden');
+                
+                const percentage = Math.round((this.score / this.questionCount) * 100);
+                
+                document.getElementById('finalScore').textContent = `${this.score}/${this.questionCount}`;
+                document.getElementById('finalPercentage').textContent = `${percentage}%`;
+                document.getElementById('timeUsed').textContent = `Time used: ${timeUsedMinutes}:${timeUsedSeconds.toString().padStart(2, '0')}`;
+                
+                let message = '';
+                if (percentage >= 90) {
+                    message = 'Excellent work! 🌟';
+                } else if (percentage >= 80) {
+                    message = 'Great job! 👍';
+                } else if (percentage >= 70) {
+                    message = 'Good effort! 👏';
+                } else if (percentage >= 60) {
+                    message = 'Keep practicing! 💪';
+                } else {
+                    message = 'Don\'t give up - practice makes perfect! 📚';
+                }
+                
+                document.getElementById('scoreMessage').textContent = message;
+            }
+
+            restart() {
+                this.resultsPanel.classList.add('hidden');
+                this.settingsPanel.classList.remove('hidden');
+                clearInterval(this.timer);
+            }
+        }
+
+        // Initialize the app
+        const mathPractice = new MathPractice();
+    </script>
+
+
+</body></html>
